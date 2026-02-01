@@ -1,0 +1,29 @@
+name: Update OpenPix Payment Cache
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update-cache:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Fetch payments
+        env:
+          OPENPIX_API_KEY: ${{ secrets.OPENPIX_API_KEY }}
+        run: python fetch_payments.py
+      - name: Commit cache
+        run: |
+          git config user.email "bot@github.com"
+          git config user.name "Cache Bot"
+          git add -A
+          git diff --staged --quiet || git commit -m "Update cache"
+          git push
